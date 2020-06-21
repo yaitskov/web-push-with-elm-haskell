@@ -18,7 +18,9 @@ localStorage.setItem('cache', JSON.stringify(data));
 {
 app.ports.cacheUpdated.send(JSON.parse(localStorage.getItem('cache')));
 {
-  let pushSr = new PushSr(wps => app.ports.newWebPushSubscription.send(wps));
+  let pushSr = new PushSr(
+    "BFR1zzv0wz5nL0BhlrZBMKFpSlZfvph7_IpjqO8nbT5gs18OMJ0K97o2ITGV5-8xTmRlLLU4hKsSbydgah19gQw",
+    wps => app.ports.newWebPushSubscription.send(wps));
   app.ports.checkWebPush.subscribe(() => pushSr.checkWebPushSubscription());
   app.ports.tryWebPush.subscribe(() => pushSr.tryWebPushSubscription());
   app.ports.closeWebPushSubscription.subscribe(() => pushSr.closeWebPushSubscription());

@@ -35,7 +35,8 @@ function sendSubscriptionToServer(subscription) {
 }
 
 class PushSr {
-  constructor(cb) {
+  constructor(webPushPublicKey, cb) {
+    this.webPushPublicKey = webPushPublicKey;
     this.cb = cb;
   }
 
@@ -116,13 +117,12 @@ class PushSr {
 
   subscribe() {
     console.log('lets subscribe');
-    let te = new TextEncoder();
     navigator.serviceWorker.ready.then(serviceWorkerRegistration => {
       console.log('sw ready for making subscribe');
       serviceWorkerRegistration.pushManager
         .subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array("BA5wU2icgNXzmjTG5f_ba0tliY9OezaKETqplE7uoe16sF258jTIDJFkHeLLoCpwNsKiNMoFNEK2Z5Yc-zKyTFY")
+          applicationServerKey: urlBase64ToUint8Array(this.webPushPublicKey)
         })
         .then(
           subscription => {
