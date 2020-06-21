@@ -127,8 +127,8 @@ class PushSr {
         .then(
           subscription => {
             console.log(`have subscription ${subscription}`);
-            let key = subscription.getKey ? subscription.getKey('p256dh') : '';
-            let auth = subscription.getKey ? subscription.getKey('auth') : '';
+            let key = subscription.getKey ? bufferToHex(subscription.getKey('p256dh')) : '';
+            let auth = subscription.getKey ? bufferToHex(subscription.getKey('auth')) : '';
             this.cb([key, auth]);
           })
         .catch(e => {
