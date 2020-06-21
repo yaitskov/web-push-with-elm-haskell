@@ -18,6 +18,7 @@ port serviceWorkerIsRegistered : (E.Value -> msg) -> Sub msg
 port newWebPushSubscription : (E.Value -> msg) -> Sub msg
 port checkWebPush : () -> Cmd msg -- not supported | declined | not established | established
 port tryWebPush : () -> Cmd msg -- new p256h auth if success
+port closeWebPushSubscription : () -> Cmd msg
 
 main = Browser.element
        { init = init
@@ -42,6 +43,7 @@ type Model = Model Int WebPushState
 
 type Msg = Change String
          | Persist Int
+         | CloseSubscription
          | TryNewWpSubscription
          | ServiceWorkerIsRegistered
          | ServiceWorkerWasNotRegistered
@@ -70,6 +72,7 @@ update msg (Model model wp) =
             let newModel = Maybe.withDefault model (safeInt newVal)
             in (Model newModel wp, doPersist newModel)
         Persist prevModel -> (Model prevModel wp, Cmd.none)
+        CloseSubscription -> (Model model wp, closeWebPushSubscription ())
         ServiceWorkerWasNotRegistered -> (Model model WpNotSupported, Cmd.none)
         ServiceWorkerIsRegistered -> (Model model wp, checkWebPush ())
         TryNewWpSubscription ->
@@ -132,7 +135,15 @@ view (Model model wp) =
                                           [ onClick TryNewWpSubscription ]
                                           [ text "Subscribe" ]
                                     ]
-                       Wp {auth, p256dh} -> text ("WebPush subscription ["
-                                                      ++ auth ++ "] [" ++ p256dh ++ "]")
+                       Wp {auth, p256dh} -> div
+                         [ Html.Attributes.style "border" "1px solid green" ]
+                         [ div [] [
+                              button [ onClick CloseSubscription ]
+                                  [ text "Close Subscription" ]
+                             ]
+                         , div [] [
+                              text ("WebPush subscription [" ++ auth ++ "] [" ++ p256dh ++ "]")
+                              ]
+                         ]
                  ]
         ]

@@ -21,6 +21,7 @@ app.ports.cacheUpdated.send(JSON.parse(localStorage.getItem('cache')));
   let pushSr = new PushSr(wps => app.ports.newWebPushSubscription.send(wps));
   app.ports.checkWebPush.subscribe(() => pushSr.checkWebPushSubscription());
   app.ports.tryWebPush.subscribe(() => pushSr.tryWebPushSubscription());
+  app.ports.closeWebPushSubscription.subscribe(() => pushSr.closeWebPushSubscription());
 }
 window.addEventListener('load', () => {
   navigator.serviceWorker.register('/sw.js').then(

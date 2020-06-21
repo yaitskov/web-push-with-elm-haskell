@@ -39,6 +39,20 @@ class PushSr {
     this.cb = cb;
   }
 
+  closeWebPushSubscription() {
+    navigator.serviceWorker.ready.then(
+          swr => swr.pushManager.getSubscription().then(
+            subscription => {
+              if (!!subscription) {
+                subscription.unsubscribe().then(bo => {
+                  console.log(`Unsubscribed ${bo}`);
+                  this.cb("WpExpired");
+                });
+              }
+            }
+          ));
+  }
+
   checkWebPushSubscription() {
     if (!this.isSupported()) {
       this.cb("WpNotSupported");
