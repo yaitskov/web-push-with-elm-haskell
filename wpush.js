@@ -12,6 +12,21 @@ function boom(e) {
   return Promise.reject(e);
 }
 
+function urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+
+    var rawData = window.atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+
+    for (var i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
 function sendSubscriptionToServer(subscription) {
   let key = subscription.getKey ? subscription.getKey('p256dh') : '';
   let auth = subscription.getKey ? subscription.getKey('auth') : '';
@@ -87,13 +102,13 @@ class PushSr {
 
   subscribe() {
     console.log('lets subscribe');
+    let te = new TextEncoder();
     navigator.serviceWorker.ready.then(serviceWorkerRegistration => {
       console.log('sw ready for making subscribe');
       serviceWorkerRegistration.pushManager
         .subscribe({
           userVisibleOnly: true,
-          applicationServerKey: "BA5wU2icgNXzmjTG5f_ba0tliY9OezaKETqpl"
-            + "E7uoe16sF258jTIDJFkHeLLoCpwNsKiNMoFNEK2Z5Yc-zKyTFY"
+          applicationServerKey: urlBase64ToUint8Array("BA5wU2icgNXzmjTG5f_ba0tliY9OezaKETqplE7uoe16sF258jTIDJFkHeLLoCpwNsKiNMoFNEK2Z5Yc-zKyTFY")
         })
         .then(
           subscription => {
