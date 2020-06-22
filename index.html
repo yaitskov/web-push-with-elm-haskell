@@ -16,28 +16,30 @@ app.ports.putCache.subscribe(function (data) {
 localStorage.setItem('cache', JSON.stringify(data));
 });
 {
-app.ports.cacheUpdated.send(JSON.parse(localStorage.getItem('cache')));
-{
-  let pushSr = new PushSr(
-    "BFR1zzv0wz5nL0BhlrZBMKFpSlZfvph7_IpjqO8nbT5gs18OMJ0K97o2ITGV5-8xTmRlLLU4hKsSbydgah19gQw",
-    wps => app.ports.newWebPushSubscription.send(wps));
-  app.ports.checkWebPush.subscribe(() => pushSr.checkWebPushSubscription());
-  app.ports.tryWebPush.subscribe(() => pushSr.tryWebPushSubscription());
-  app.ports.closeWebPushSubscription.subscribe(() => pushSr.closeWebPushSubscription());
+  app.ports.cacheUpdated.send(JSON.parse(localStorage.getItem('cache')));
+  window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then(
+        registration => {
+          console.info('Service worker is registered ' + registration);
+          fetch("/public-key").then(ok => ok.json()).then(key => {
+            let pushSr = new PushSr(
+              new Uint8Array(key),
+              wps => app.ports.newWebPushSubscription.send(wps));
+            app.ports.checkWebPush.subscribe(() => pushSr.checkWebPushSubscription());
+            app.ports.tryWebPush.subscribe(() => pushSr.tryWebPushSubscription());
+            app.ports.closeWebPushSubscription.subscribe(() => pushSr.closeWebPushSubscription());
+
+            app.ports.serviceWorkerIsRegistered.send({});
+          }).catch(e => console.log("Failed to get WebPush public key " + e));
+        },
+        e => {
+          console.info('Service worker was not registered ' + e);
+          app.ports.serviceWorkerWasNotssssRegistered.send({});
+        }
+      );
+    });
 }
-window.addEventListener('load', () => {
-  navigator.serviceWorker.register('/sw.js').then(
-    registration => {
-      console.info('Service worker is registered ' + registration);
-      app.ports.serviceWorkerIsRegistered.send({});
-    },
-    e => {
-      console.info('Service worker was not registered ' + e);
-      app.ports.serviceWorkerWasNotssssRegistered.send({});
-    }
-  );
-});
-}
+
 
 </script>
 </body>
