@@ -1,5 +1,10 @@
-resolver: lts-15.13
+resolver: lts-15.10
 
 
 packages:
 - .
+
+
+extra-deps:
+  - git: file:///home/dan/pro/haskell-libs/web-push
+    commit: 1cce15261eeee1a4d1074060deb8b0e6478774e6
