@@ -37,6 +37,7 @@ library
                      , clock
                      , http-api-data
                      , http-client
+                     , http-client-tls
                      , http-media
                      , lens >= 4.18.1
                      , raw-strings-qq

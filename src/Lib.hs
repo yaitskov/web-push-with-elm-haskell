@@ -17,6 +17,7 @@ import qualified Data.ByteString.Char8 as BS
 import Data.Text as T
 import Data.Word
 import qualified Network.HTTP.Client as H
+import qualified Network.HTTP.Client.TLS as H
 import Network.Wai.Handler.Warp
 
 import Servant
@@ -62,7 +63,7 @@ initState :: IO WwdApp
 initState = WwdApp
             <$> generateVAPIDKeys
             <*> newMVar []
-            <*> H.newManager H.defaultManagerSettings
+            <*> H.newTlsManager --  H.defaultManagerSettings
 
 trans :: WwdApp -> AppT x -> Handler x
 trans st rdr = Handler $ liftIO (try (runReaderT rdr st)) >>=
