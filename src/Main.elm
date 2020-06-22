@@ -39,6 +39,7 @@ type WebPushState
     | Wp
       { p256dh : String
       , auth : String
+      , endpoint : String
       , serverKnows : Bool
       , broadcastWebPushMessage : String
       }
@@ -86,9 +87,10 @@ update msg (Model model wp) =
         ServiceWorkerIsRegistered -> (Model model wp, checkWebPush ())
         BroadcastMsgModified newBroadcastMsg ->
             case wp of
-                Wp {auth, p256dh, serverKnows} ->
+                Wp {auth, p256dh, serverKnows, endpoint} ->
                     (Model model (Wp { auth = auth
                                      , p256dh = p256dh
+                                     , endpoint = endpoint
                                      , serverKnows = serverKnows
                                      , broadcastWebPushMessage = newBroadcastMsg
                                      }),
@@ -110,9 +112,10 @@ update msg (Model model wp) =
             case r of
                 Ok _ ->
                     case wp of
-                        Wp {auth, p256dh, broadcastWebPushMessage} ->
+                        Wp {auth, p256dh, broadcastWebPushMessage, endpoint} ->
                             (Model model (Wp { auth = auth
                                              , p256dh = p256dh
+                                             , endpoint = endpoint
                                              , serverKnows = True
                                              , broadcastWebPushMessage = broadcastWebPushMessage
                                              }),
@@ -122,13 +125,14 @@ update msg (Model model wp) =
 
         BroadcastServerWpResponse res ->
             case wp of
-                Wp {auth, p256dh, broadcastWebPushMessage, serverKnows} ->
+                Wp {auth, p256dh, broadcastWebPushMessage, serverKnows, endpoint} ->
                     case res of
                         Ok _ -> (Model model
                                      (Wp { broadcastWebPushMessage = ""
-                                        , auth = auth
-                                        , p256dh = p256dh
-                                        , serverKnows = serverKnows
+                                         , auth = auth
+                                         , p256dh = p256dh
+                                         , endpoint = endpoint
+                                         , serverKnows = serverKnows
                                         }),
                                        Cmd.none)
                         _ -> (Model model wp, Cmd.none)
@@ -136,11 +140,15 @@ update msg (Model model wp) =
 
         SendSubscriptionToServer ->
             case wp of
-                Wp {p256dh, auth} ->
+                Wp {p256dh, auth, endpoint} ->
                     (Model model wp,
                          Http.post
-                         { url = "/web-push-subscription/p256dh/" ++ p256dh ++ "/auth/" ++ auth
-                         , body = Http.emptyBody
+                         { url = "/web-push-subscription"
+                         , body = Http.jsonBody (E.object [ ("auth", E.string auth)
+                                                          , ("url", E.string endpoint)
+                                                          , ("p256dh", E.string p256dh)
+                                                          ]
+                                  )
                          , expect = Http.expectWhatever ServerWpBindResponse
                          })
                 _ -> (Model model wp, Cmd.none)
@@ -167,10 +175,11 @@ parseWebPushState ev =
                     "WpExpired" -> Just WpExpired
                     _ -> Nothing
         _ -> case D.decodeValue (D.list D.string) ev of
-                 Ok [p256dh, auth] -> Just (Wp { p256dh = p256dh
-                                               , auth = auth
-                                               , serverKnows = False
-                                               , broadcastWebPushMessage = ""
+                 Ok [p256dh, auth, endpoint] -> Just (Wp { p256dh = p256dh
+                                                         , auth = auth
+                                                         , endpoint = endpoint
+                                                         , serverKnows = False
+                                                         , broadcastWebPushMessage = ""
                                                })
                  _ -> Nothing
 
