@@ -6,6 +6,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onClick)
 
+import Http
+
 import Json.Decode as D
 import Json.Encode as E
 
@@ -37,13 +39,20 @@ type WebPushState
     | Wp
       { p256dh : String
       , auth : String
+      , serverKnows : Bool
+      , broadcastWebPushMessage : String
       }
 
 type Model = Model Int WebPushState
 
 type Msg = Change String
          | Persist Int
+         | BroadcastMsgModified String
+         | BroadcastOverWebPush
          | CloseSubscription
+         | SendSubscriptionToServer
+         | ServerWpBindResponse (Result Http.Error ())
+         | BroadcastServerWpResponse (Result Http.Error ())
          | TryNewWpSubscription
          | ServiceWorkerIsRegistered
          | ServiceWorkerWasNotRegistered
@@ -75,6 +84,66 @@ update msg (Model model wp) =
         CloseSubscription -> (Model model wp, closeWebPushSubscription ())
         ServiceWorkerWasNotRegistered -> (Model model WpNotSupported, Cmd.none)
         ServiceWorkerIsRegistered -> (Model model wp, checkWebPush ())
+        BroadcastMsgModified newBroadcastMsg ->
+            case wp of
+                Wp {auth, p256dh, serverKnows} ->
+                    (Model model (Wp { auth = auth
+                                     , p256dh = p256dh
+                                     , serverKnows = serverKnows
+                                     , broadcastWebPushMessage = newBroadcastMsg
+                                     }),
+                         Cmd.none)
+                _ -> (Model model wp, Cmd.none)
+
+        BroadcastOverWebPush ->
+            case wp of
+                Wp {broadcastWebPushMessage} ->
+                    (Model model wp,
+                         Http.post
+                         { url = "/broadcast-msg-over-web-push"
+                         , body = Http.jsonBody (E.string broadcastWebPushMessage)
+                         , expect = Http.expectWhatever BroadcastServerWpResponse
+                         })
+                _ -> (Model model wp, Cmd.none)
+
+        ServerWpBindResponse r ->
+            case r of
+                Ok _ ->
+                    case wp of
+                        Wp {auth, p256dh, broadcastWebPushMessage} ->
+                            (Model model (Wp { auth = auth
+                                             , p256dh = p256dh
+                                             , serverKnows = True
+                                             , broadcastWebPushMessage = broadcastWebPushMessage
+                                             }),
+                                 Cmd.none)
+                        _ -> (Model model wp, Cmd.none)
+                Err _ -> (Model model wp, Cmd.none)
+
+        BroadcastServerWpResponse res ->
+            case wp of
+                Wp {auth, p256dh, broadcastWebPushMessage, serverKnows} ->
+                    case res of
+                        Ok _ -> (Model model
+                                     (Wp { broadcastWebPushMessage = ""
+                                        , auth = auth
+                                        , p256dh = p256dh
+                                        , serverKnows = serverKnows
+                                        }),
+                                       Cmd.none)
+                        _ -> (Model model wp, Cmd.none)
+                _ -> (Model model wp, Cmd.none)
+
+        SendSubscriptionToServer ->
+            case wp of
+                Wp {p256dh, auth} ->
+                    (Model model wp,
+                         Http.post
+                         { url = "/web-push-subscription/p256dh/" ++ p256dh ++ "/auth/" ++ auth
+                         , body = Http.emptyBody
+                         , expect = Http.expectWhatever ServerWpBindResponse
+                         })
+                _ -> (Model model wp, Cmd.none)
         TryNewWpSubscription ->
             (Model model WpSubscribing, tryWebPush ())
         NewWebPushState newWpSt ->
@@ -98,8 +167,11 @@ parseWebPushState ev =
                     "WpExpired" -> Just WpExpired
                     _ -> Nothing
         _ -> case D.decodeValue (D.list D.string) ev of
-                 Ok [p256dh, auth] -> Just (Wp { p256dh = p256dh,
-                                                     auth = auth })
+                 Ok [p256dh, auth] -> Just (Wp { p256dh = p256dh
+                                               , auth = auth
+                                               , serverKnows = False
+                                               , broadcastWebPushMessage = ""
+                                               })
                  _ -> Nothing
 
 
@@ -135,12 +207,24 @@ view (Model model wp) =
                                           [ onClick TryNewWpSubscription ]
                                           [ text "Subscribe" ]
                                     ]
-                       Wp {auth, p256dh} -> div
+                       Wp {auth, p256dh, serverKnows, broadcastWebPushMessage} -> div
                          [ Html.Attributes.style "border" "1px solid green" ]
                          [ div [] [
-                              button [ onClick CloseSubscription ]
-                                  [ text "Close Subscription" ]
+                                button [ onClick CloseSubscription ]
+                                    [ text "Close Subscription" ]
+                               ]
+                         , div [Html.Attributes.hidden (not serverKnows)]
+                             [ div []
+                                   [ text "Message:"
+                                   , input [ onInput BroadcastMsgModified
+                                           , value broadcastWebPushMessage] []
+                                   ]
+                             , button [ onClick BroadcastOverWebPush ] [ text "broadcast" ]
                              ]
+                         , div [hidden serverKnows] [
+                                button [ onClick SendSubscriptionToServer ]
+                                    [ text "Send subscrition to server" ]
+                               ]
                          , div [] [
                               text ("WebPush subscription [" ++ auth ++ "] [" ++ p256dh ++ "]")
                               ]
