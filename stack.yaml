@@ -4,7 +4,11 @@ resolver: lts-15.10
 packages:
 - .
 
-
+allow-newer: true
 extra-deps:
+  - binary-0.8.8.0@sha256:e9387a7ef2b34c6a23b09664c306e37cc01ae2cb4e4511a1c96ffb14008c24b0,6262
+  - Cabal-3.2.0.0@sha256:d0d7a1f405f25d0000f5ddef684838bc264842304fd4e7f80ca92b997b710874,27320
+  - parsec-3.1.14.0@sha256:63a4555d6ea2aaccd8588fc809e5d137e72b668898ab3b171ce8458b792f0f36,4356
+  - text-1.2.4.0@sha256:8c24450feb8e3bbb7ea3e17af24ef57e85db077c4bf53e5bcc345b283d1b1d5b,10081
   - git: file:///home/dan/pro/haskell-libs/web-push
-    commit: 1cce15261eeee1a4d1074060deb8b0e6478774e6
+    commit: ce14ed406999d191a450eb6ee9654db4ac92a71c
