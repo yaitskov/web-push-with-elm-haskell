@@ -2,17 +2,11 @@ function resolved(v) {
   return Promise.resolve(v);
 }
 
-function bufferToHex(buffer) {
-    return [...new Uint8Array (buffer)]
-        .map (b => b.toString (16).padStart (2, "0"))
-        .join ("");
-}
-
-function sendSubscriptionToServer(subscription) {
-  let key = subscription.getKey ? subscription.getKey('p256dh') : '';
-  let auth = subscription.getKey ? subscription.getKey('auth') : '';
-
-  console.info(`Send key ${key} and auth ${auth} to server`);
+function bufferToBase64(buffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+    // return [...new Uint8Array (buffer)]
+    //     .map (b => b.toString (16).padStart (2, "0"))
+    //     .join ("");
 }
 
 class PushSr {
@@ -47,8 +41,8 @@ class PushSr {
           swr => swr.pushManager.getSubscription().then(
             subscription => {
               if (!!subscription) {
-                let key = subscription.getKey ? bufferToHex(subscription.getKey('p256dh')) : '';
-                let auth = subscription.getKey ? bufferToHex(subscription.getKey('auth')) : '';
+                let key = subscription.getKey ? bufferToBase64(subscription.getKey('p256dh')) : '';
+                let auth = subscription.getKey ? bufferToBase64(subscription.getKey('auth')) : '';
                 console.log(`wp key = ${key} and auth = ${auth}`);
                 this.cb([key, auth, subscription.endpoint]);
               } else {
@@ -79,8 +73,8 @@ class PushSr {
           swr => swr.pushManager.getSubscription().then(
             subscription => {
               if (!!subscription) {
-                let key = subscription.getKey ? bufferToHex(subscription.getKey('p256dh')) : '';
-                let auth = subscription.getKey ? bufferToHex(subscription.getKey('auth')) : '';
+                let key = subscription.getKey ? bufferToBase64(subscription.getKey('p256dh')) : '';
+                let auth = subscription.getKey ? bufferToBase64(subscription.getKey('auth')) : '';
                 console.log(`wp key = ${key} and auth = ${auth}`);
                 this.cb([key, auth, subscription.endpoint]);
               } else {
@@ -108,8 +102,8 @@ class PushSr {
         .then(
           subscription => {
             console.log(`have subscription ${subscription}`);
-            let key = subscription.getKey ? bufferToHex(subscription.getKey('p256dh')) : '';
-            let auth = subscription.getKey ? bufferToHex(subscription.getKey('auth')) : '';
+            let key = subscription.getKey ? bufferToBase64(subscription.getKey('p256dh')) : '';
+            let auth = subscription.getKey ? bufferToBase64(subscription.getKey('auth')) : '';
             this.cb([key, auth, subscription.endpoint]);
           })
         .catch(e => {
